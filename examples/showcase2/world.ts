@@ -50,7 +50,7 @@ load(GLTFLoader, 'showcase2/pine.glb').then(async (gltf) => {
   const ambientLight = new AmbientLight('white', 2);
   scene.add(ambientLight);
 
-  scene.fog = new FogExp2(fogColor, 0.0015);
+  scene.fog = new FogExp2(fogColor, 0.002);
 
   // TERRAIN
   const terrain = new Terrain();
