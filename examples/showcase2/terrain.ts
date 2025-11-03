@@ -21,9 +21,9 @@ export class Terrain extends Group {
       gltf.scene.children[0] instanceof Object3D,
       "Terrain model has no children"
     );
-    
+
     const positions: Vector3[] = [];
-    for (const instancedMesh of gltf.scene.querySelectorAll("[isInstancedMesh=true]").slice(0, treeNumber) as InstancedMesh[]) {
+    for (const instancedMesh of gltf.scene.querySelectorAll(`[name^=GN_Instance]`).slice(0, treeNumber) as InstancedMesh[]) {
       const threeCoord = instancedMesh.getWorldPosition(new Vector3());
       instancedMesh.removeFromParent(); 
       positions.push(threeCoord);
