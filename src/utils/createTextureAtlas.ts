@@ -1,4 +1,4 @@
-import { GLSL3, IUniform, LinearFilter, LinearMipmapLinearFilter, LinearSRGBColorSpace, Mesh, MeshStandardMaterial, NearestFilter, NearestMipMapNearestFilter, Object3D, OrthographicCamera, ShaderMaterial, Sphere, TangentSpaceNormalMap, Texture, UnsignedByteType, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
+import { GLSL3, IUniform, LinearFilter, LinearMipmapLinearFilter, LinearSRGBColorSpace, Mesh, MeshStandardMaterial, NearestFilter, NearestMipMapNearestFilter, Object3D, ObjectSpaceNormalMap, OrthographicCamera, ShaderMaterial, Sphere, TangentSpaceNormalMap, Texture, UnsignedByteType, Vector2, Vector4, WebGLRenderer, WebGLRenderTarget } from 'three';
 import { computeObjectBoundingSphere } from './computeObjectBoundingSphere.js';
 import { hemiOctaGridToDir, octaGridToDir } from './octahedronUtils.js';
 
@@ -111,7 +111,7 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
     target.traverse((mesh) => {
       if ((mesh as Mesh).material) {
         const material = (mesh as Mesh).material as MeshStandardMaterial | MeshStandardMaterial[];
-        mesh.userData[userDataMaterialKey] = material;
+        mesh.userData[userDataMaterialKey] = material; // TODO use map instead
         const overrideMaterial = Array.isArray(material) ? material.map((mat) => createMaterial(mat)) : createMaterial(material);
         (mesh as Mesh).material = overrideMaterial;
       }
@@ -124,6 +124,7 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
     const hasNormalMap = !!material.normalMap;
     const hasBumpMap = !!material.bumpMap;
     const hasDisplacementMap = !!material.displacementMap;
+    const hasAlphaTest = material.alphaTest > 0;
 
     const uniforms: { [uniform: string]: IUniform } = {
       diffuse: { value: material.color },
@@ -131,6 +132,10 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
     };
 
     // From MeshBasicMaterial
+
+    if (hasAlphaTest) {
+      uniforms['alphaTest'] = { value: material.alphaTest };
+    }
 
     if (hasMap) {
       uniforms['map'] = { value: material.map };
@@ -177,7 +182,6 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
       glslVersion: GLSL3,
       transparent: material.transparent,
       side: material.side,
-      alphaTest: material.alphaTest,
       alphaHash: material.alphaHash,
       depthFunc: material.depthFunc,
       depthWrite: material.depthWrite,
@@ -197,7 +201,6 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
       forceSinglePass: material.forceSinglePass,
       vertexColors: material.vertexColors,
       precision: material.precision,
-      // toneMapped: material.toneMapped,
       visible: material.visible
     });
 
@@ -216,6 +219,7 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
         shader.normalMap = true;
         shader.normalMapUv = 'uv';
         shader.normalMapTangentSpace = material.normalMapType === TangentSpaceNormalMap;
+        shader.normalMapObjectSpace = material.normalMapType === ObjectSpaceNormalMap;
       }
 
       if (hasBumpMap) {
@@ -229,6 +233,7 @@ export function createTextureAtlas(params: CreateTextureAtlasParams): TextureAtl
       }
 
       shader.flatShading = material.flatShading;
+      shader.alphaTest = hasAlphaTest;
     };
 
     return shaderMaterial;
